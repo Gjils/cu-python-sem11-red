@@ -491,3 +491,243 @@ class FinanceManager:
         self.records = df.to_dict("index")
         self.save_to_file()
         logging.info(f"Финансовые записи импортированы из файла {filename}")
+
+def main_menu():
+    while True:
+        print("\nДобро пожаловать в Персональный помощник!")
+        print("Выберите действие:")
+        print("1. Управление заметками")
+        print("2. Управление задачами")
+        print("3. Управление контактами")
+        print("4. Управление финансовыми записями")
+        print("5. Калькулятор")
+        print("6. Выход")
+
+        choice = input("Введите номер действия: ")
+
+        if choice == '1':
+            notes_menu()
+        elif choice == '2':
+            tasks_menu()
+        elif choice == '3':
+            contacts_menu()
+        elif choice == '4':
+            finance_menu()
+        elif choice == '5':
+            calculator_menu()
+        elif choice == '6':
+            print("До свидания!")
+            break
+        else:
+            print("Некорректный ввод. Попробуйте снова.")
+
+def notes_menu():
+    note_manager = NoteManager('notes.json')
+    
+    while True:
+        print("\n--- Управление заметками ---")
+        print("1. Добавить заметку")
+        print("2. Просмотреть все заметки")
+        print("3. Редактировать заметку")
+        print("4. Экспортировать заметки в CSV")
+        print("5. Импортировать заметки из CSV")
+        print("6. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+        if choice == '1':
+            title = input("Введите заголовок: ")
+            content = input("Введите содержимое: ")
+            note = Note(title, content)
+            note_manager.create_note(note)
+        elif choice == '2':
+            for note in note_manager.get_all_notes():
+                print(note)
+        elif choice == '3':
+            note_id = input("Введите ID заметки для редактирования: ")
+            updated_title = input("Введите новый заголовок: ")
+            updated_content = input("Введите новое содержимое: ")
+            note_manager.edit_note(note_id, updated_title, updated_content)
+            print(f"Заметка {note_id} обновлена.")
+        elif choice == '4':
+            filename = input("Введите имя файла для экспорта (например, notes.csv): ")
+            note_manager.export_to_csv(filename)
+            print(f"Заметки экспортированы в {filename}")
+        elif choice == '5':
+            filename = input("Введите имя файла для импорта (например, notes.csv): ")
+            note_manager.import_from_csv(filename)
+            print(f"Заметки импортированы из {filename}")
+        elif choice == '6':
+            break
+        else:
+            print("Некорректный ввод.")
+
+def tasks_menu():
+    task_manager = TaskManager('tasks.json')
+    
+    while True:
+        print("\n--- Управление задачами ---")
+        print("1. Добавить задачу")
+        print("2. Просмотреть все задачи")
+        print("3. Редактировать задачу")
+        print("4. Изменить статус задачи")
+        print("5. Экспортировать задачи в CSV")
+        print("6. Импортировать задачи из CSV")
+        print("7. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+        if choice == '1':
+            title = input("Введите заголовок: ")
+            description = input("Введите описание: ")
+            priority = input("Введите приоритет (Высокий/Средний/Низкий): ")
+            due_date = input("Введите дедлайн (ДД-ММ-ГГГГ): ")
+            task = Task(title, description, priority, due_date)
+            task_manager.add_task(task)
+        elif choice == '2':
+            for task in task_manager.get_all_tasks():
+                print(task)
+        elif choice == '3':
+            task_id = input("Введите ID задачи для редактирования: ")
+            title = input("Введите новый заголовок: ")
+            description = input("Введите новое описание: ")
+            priority = input("Введите новый приоритет: ")
+            due_date = input("Введите новый дедлайн: ")
+            updated_task = Task(title, description, priority, due_date, task_id)
+            task_manager.edit_task(updated_task)
+            print(f"Задача {task_id} обновлена.")
+        elif choice == '4':
+            task_id = input("Введите ID задачи для изменения статуса: ")
+            task = task_manager.get_task_by_id(task_id=task_id)
+            task.update_task_status()
+            task_manager.edit_task(task)
+            print(f"Статус задачи {task_id} изменён.")
+        elif choice == '5':
+            filename = input("Введите имя файла для экспорта (например, tasks.csv): ")
+            task_manager.export_to_csv(filename)
+            print(f"Задачи экспортированы в {filename}")
+        elif choice == '6':
+            filename = input("Введите имя файла для импорта (например, tasks.csv): ")
+            task_manager.import_from_csv(filename)
+            print(f"Задачи импортированы из {filename}")
+        elif choice == '7':
+            break
+        else:
+            print("Некорректный ввод.")
+
+def contacts_menu():
+    contact_manager = ContactManager('contacts.json')
+
+    while True:
+        print("\n--- Управление контактами ---")
+        print("1. Добавить контакт")
+        print("2. Просмотреть все контакты")
+        print("3. Редактировать контакт")
+        print("4. Экспортировать контакты в CSV")
+        print("5. Импортировать контакты из CSV")
+        print("6. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+        if choice == '1':
+            name = input("Введите имя: ")
+            phone = input("Введите телефон: ")
+            email = input("Введите email: ")
+            contact = Contact(name, phone, email)
+            contact_manager.add_contact(contact)
+        elif choice == '2':
+            for contact in contact_manager.get_all_contacts():
+                print(contact)
+        elif choice == '3':
+            contact_id = input("Введите ID контакта для редактирования: ")
+            name = input("Введите новое имя: ")
+            phone = input("Введите новый телефон: ")
+            email = input("Введите новый email: ")
+            updated_contact = Contact(name, phone, email, contact_id)
+            contact_manager.edit_contact(updated_contact)
+            print(f"Контакт {contact_id} обновлён.")
+        elif choice == '4':
+            filename = input("Введите имя файла для экспорта (например, contacts.csv): ")
+            contact_manager.export_to_csv(filename)
+            print(f"Контакты экспортированы в {filename}")
+        elif choice == '5':
+            filename = input("Введите имя файла для импорта (например, contacts.csv): ")
+            contact_manager.import_from_csv(filename)
+            print(f"Контакты импортированы из {filename}")
+        elif choice == '6':
+            break
+        else:
+            print("Некорректный ввод.")
+
+def finance_menu():
+    finance_manager = FinanceManager('finance.json')
+
+    while True:
+        print("\n--- Управление финансовыми записями ---")
+        print("1. Добавить финансовую запись")
+        print("2. Просмотреть все записи")
+        print("3. Редактировать запись")
+        print("4. Экспортировать записи в CSV")
+        print("5. Импортировать записи из CSV")
+        print("6. Назад в главное меню")
+
+        choice = input("Выберите действие: ")
+        if choice == '1':
+            amount = float(input("Введите сумму: "))
+            category = input("Введите категорию: ")
+            date = input("Введите дату (ДД-ММ-ГГГГ): ")
+            description = input("Введите описание: ")
+            record = FinanceRecord(amount, category, date, description)
+            finance_manager.add_record(record)
+        elif choice == '2':
+            for record in finance_manager.get_all_records():
+                print(record)
+        elif choice == '3':
+            record_id = input("Введите ID записи для редактирования: ")
+            amount = float(input("Введите новую сумму: "))
+            category = input("Введите новую категорию: ")
+            date = input("Введите новую дату (ДД-ММ-ГГГГ): ")
+            description = input("Введите новое описание: ")
+            updated_record = FinanceRecord(amount, category, date, description, record_id)
+            finance_manager.edit_record(updated_record)
+            print(f"Запись {record_id} обновлена.")
+        elif choice == '4':
+            filename = input("Введите имя файла для экспорта (например, finance.csv): ")
+            finance_manager.export_to_csv(filename)
+            print(f"Финансовые записи экспортированы в {filename}")
+        elif choice == '5':
+            filename = input("Введите имя файла для импорта (например, finance.csv): ")
+            finance_manager.import_from_csv(filename)
+            print(f"Финансовые записи импортированы из {filename}")
+        elif choice == '6':
+            break
+        else:
+            print("Некорректный ввод.")
+
+
+def calculator_menu():
+    operations = {
+        "+": operator.add,
+        "-": operator.sub,
+        "*": operator.mul,
+        "/": operator.truediv,
+    }
+
+    print("\n--- Калькулятор ---")
+    print("Поддерживаемые операции: +, -, *, /")
+
+    try:
+        num1 = float(input("Введите первое число: "))
+        op = input("Введите операцию (+, -, *, /): ").strip()
+        num2 = float(input("Введите второе число: "))
+
+        if op not in operations:
+            print("Ошибка: неподдерживаемая операция.")
+            return
+
+        if op == "/" and num2 == 0:
+            print("Ошибка: деление на ноль.")
+            return
+
+        result = operations[op](num1, num2)
+        print(f"Результат: {result}")
+
+    except ValueError:
+        print("Ошибка: некорректный ввод. Введите числа корректно.")
