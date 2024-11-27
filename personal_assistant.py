@@ -145,3 +145,80 @@ class FinanceRecord:
     @staticmethod
     def from_json(record_json):
         return FinanceRecord(**record_json)
+    
+class NoteManager:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+        self.init_notes()
+
+    def init_notes(self) -> None:
+        if not os.path.isfile(self.filename):
+            logging.warning(f"Файл {self.filename} не найден")
+            with open(self.filename, "w") as file:
+                file.write("{}")
+                logging.info(f"Файл {self.filename} создан")
+            self.notes = {}
+
+        with open(self.filename, "r+") as file:
+            try:
+                notes = json.loads(file.read())
+                logging.info(f"Файл {self.filename} найден и является валидным JSON")
+                self.notes = notes
+            except:
+                logging.warning(f"Файл {self.filename} найден, но поврежден")
+                file.seek(0)
+                file.truncate(0)
+                file.write("{}")
+                logging.info(f"Файл {self.filename} перезаписан")
+                self.notes = {}
+
+    def save_to_file(self) -> None:
+        with open(self.filename, "w") as file:
+            file.write(json.dumps(self.notes))
+
+    def create_note(self, note: Note) -> None:
+        self.notes[note.id] = note.to_json()
+        self.save_to_file()
+        logging.info(f"Заметка с ID {note.id} добавлена в базу данных")
+
+    def get_all_notes(self) -> list[Note]:
+        notes = [Note.from_json(item) for item in self.notes.values()]
+        logging.info(f"Запрос на получение всех заметок")
+        return notes
+
+    def get_note_by_id(self, id: str) -> Note:
+        if id not in self.notes:
+            logging.error(f"Заметки с ID {id} нет")
+            return
+        note = Note.from_json(self.notes[id])
+        logging.info(f"Запрос на получение заметки с ID {id}")
+        return note
+
+    def edit_note(self, note: Note) -> None:
+        if note.id not in self.notes:
+            logging.error(f"Заметки с ID {id} нет")
+            return
+        self.notes[note.id] = note.to_json()
+        self.save_to_file()
+        logging.info(f"Запрос на изменение заметки с ID {note.id}")
+
+    def delete_note(self, id: str) -> None:
+        if id not in self.notes:
+            logging.error(f"Заметки с ID {id} нет")
+            return
+        del self.notes[id]
+        self.save_to_file()
+        logging.info(f"Заметка с ID {id} удалена")
+
+    def export_to_csv(self, filename: str) -> None:
+        df = pd.DataFrame.from_dict(self.notes)
+
+        df = df.transpose().reset_index(drop=True)
+        df.to_csv(filename, index=False)
+
+    def import_from_csv(self, filename: str) -> None:
+        df = pd.read_csv(filename)
+        df.index = df["id"]
+        data = df.to_dict("index")
+        self.notes = data
+        self.save_to_file()
