@@ -34,3 +34,46 @@ class Note:
     @staticmethod
     def from_json(note_json):
         return Note(**note_json)
+      
+class Task:
+    def __init__(self, title, description, priority, due_date, id=None, done=None):
+        if id is None:
+            id = str(uuid.uuid4())
+        if done == None:
+            done = False
+        self.id = id
+        self.title = title
+        self.description = description
+        self.priority = priority
+        self.due_date = due_date
+
+    def edit_note(
+        self, new_title=None, new_description=None, new_priority=None, new_due_date=None
+    ):
+        if not new_title is None:
+            self.title = new_title
+        if not new_description is None:
+            self.description = new_description
+        if not new_priority is None:
+            self.priority = new_priority
+        if not new_due_date is None:
+            self.due_date = new_due_date
+
+    def toggle_done(self):
+        self.done = not self.done
+
+    def to_json(self):
+        return dict(
+            id=self.id,
+            title=self.title,
+            description=self.description,
+            priority=self.priority,
+            due_date=self.due_date,
+        )
+
+    def __str__(self) -> str:
+        return f"Задача {self.title} с ID {self.id}\nCтатус: {self.done}\nПриоритет: {self.priority}\nДедлайн: {self.due_date}"
+
+    @staticmethod
+    def from_json(task_json):
+        return Task(**task_json)
