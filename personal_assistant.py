@@ -108,6 +108,7 @@ class Contact:
     def from_json(contact_json):
         return Contact(**contact_json)
 
+
 class FinanceRecord:
     def __init__(self, amount, category, date, description, id=None):
         if id is None:
@@ -145,7 +146,8 @@ class FinanceRecord:
     @staticmethod
     def from_json(record_json):
         return FinanceRecord(**record_json)
-    
+
+
 class NoteManager:
     def __init__(self, filename: str) -> None:
         self.filename = filename
@@ -222,3 +224,90 @@ class NoteManager:
         data = df.to_dict("index")
         self.notes = data
         self.save_to_file()
+
+
+class TaskManager:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+        self.init_tasks()
+
+    def init_tasks(self) -> None:
+        if not os.path.isfile(self.filename):
+            logging.warning(f"Файл {self.filename} не найден")
+            with open(self.filename, "w") as file:
+                file.write("{}")
+                logging.info(f"Файл {self.filename} создан")
+            self.tasks = {}
+        else:
+            with open(self.filename, "r+") as file:
+                try:
+                    tasks = json.loads(file.read())
+                    logging.info(
+                        f"Файл {self.filename} найден и является валидным JSON"
+                    )
+                    self.tasks = tasks
+                except:
+                    logging.warning(f"Файл {self.filename} поврежден")
+                    file.seek(0)
+                    file.truncate(0)
+                    file.write("{}")
+                    logging.info(f"Файл {self.filename} перезаписан")
+                    self.tasks = {}
+
+    def save_to_file(self) -> None:
+        with open(self.filename, "w") as file:
+            file.write(json.dumps(self.tasks))
+
+    def add_task(self, task: Task) -> None:
+        self.tasks[task.id] = task.to_json()
+        self.save_to_file()
+        logging.info(f"Задача с ID {task.id} добавлена")
+
+    def get_all_tasks(self) -> list[Task]:
+        logging.info("Запрос на получение всех задач")
+        return [Task.from_json(item) for item in self.tasks.values()]
+
+    def get_task_by_id(self, task_id: str) -> Task:
+        if task_id not in self.tasks:
+            logging.error(f"Задачи с ID {task_id} нет")
+            return None
+        logging.info(f"Запрос на получение задачи с ID {task_id}")
+        return Task.from_json(self.tasks[task_id])
+
+    def edit_task(self, updated_task: Task) -> None:
+        if updated_task.id not in self.tasks:
+            logging.error(f"Задачи с ID {updated_task.id} нет")
+            return
+        self.tasks[updated_task.id] = updated_task.to_json()
+        self.save_to_file()
+        logging.info(f"Задача с ID {updated_task.id} обновлена")
+
+    def delete_task(self, task_id: str) -> None:
+        if task_id not in self.tasks:
+            logging.error(f"Задачи с ID {task_id} нет")
+            return
+        del self.tasks[task_id]
+        self.save_to_file()
+        logging.info(f"Задача с ID {task_id} удалена")
+
+    def export_to_csv(self, filename: str) -> None:
+        df = pd.DataFrame.from_dict(self.tasks, orient="index")
+        df.to_csv(filename, index=False)
+        logging.info(f"Задачи экспортированы в файл {filename}")
+
+    def import_from_csv(self, filename: str) -> None:
+        df = pd.read_csv(filename)
+        df.index = df["id"]
+        self.tasks = df.to_dict("index")
+        self.save_to_file()
+        logging.info(f"Задачи импортированы из файла {filename}")
+
+    def filter_tasks(self, status=None, priority=None, due_date=None) -> list[Task]:
+        tasks = self.get_all_tasks()
+        if status is not None:
+            tasks = [task for task in tasks if task.done == status]
+        if priority is not None:
+            tasks = [task for task in tasks if task.priority == priority]
+        if due_date is not None:
+            tasks = [task for task in tasks if task.due_date == due_date]
+        return tasks
