@@ -107,3 +107,41 @@ class Contact:
     @staticmethod
     def from_json(contact_json):
         return Contact(**contact_json)
+
+class FinanceRecord:
+    def __init__(self, amount, category, date, description, id=None):
+        if id is None:
+            id = str(uuid.uuid4())
+        self.id = id
+        self.amount = amount
+        self.category = category
+        self.date = date
+        self.description = description
+
+    def edit_record(
+        self, new_amount=None, new_category=None, new_date=None, new_description=None
+    ):
+        if new_amount is not None:
+            self.amount = new_amount
+        if new_category is not None:
+            self.category = new_category
+        if new_date is not None:
+            self.date = new_date
+        if new_description is not None:
+            self.description = new_description
+
+    def to_json(self):
+        return dict(
+            id=self.id,
+            amount=self.amount,
+            category=self.category,
+            date=self.date,
+            description=self.description,
+        )
+
+    def __str__(self):
+        return f"Запись: {self.amount} руб. ({self.category}) на {self.date} — {self.description}"
+
+    @staticmethod
+    def from_json(record_json):
+        return FinanceRecord(**record_json)
