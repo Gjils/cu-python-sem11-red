@@ -390,3 +390,104 @@ class ContactManager:
         self.contacts = df.to_dict("index")
         self.save_to_file()
         logging.info(f"Контакты импортированы из файла {filename}")
+
+
+class FinanceManager:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+        self.init_records()
+
+    def init_records(self) -> None:
+        if not os.path.isfile(self.filename):
+            logging.warning(f"Файл {self.filename} не найден")
+            with open(self.filename, "w") as file:
+                file.write("{}")
+                logging.info(f"Файл {self.filename} создан")
+            self.records = {}
+        else:
+            with open(self.filename, "r+") as file:
+                try:
+                    records = json.loads(file.read())
+                    logging.info(
+                        f"Файл {self.filename} найден и является валидным JSON"
+                    )
+                    self.records = records
+                except:
+                    logging.warning(f"Файл {self.filename} поврежден")
+                    file.seek(0)
+                    file.truncate(0)
+                    file.write("{}")
+                    logging.info(f"Файл {self.filename} перезаписан")
+                    self.records = {}
+
+    def save_to_file(self) -> None:
+        with open(self.filename, "w") as file:
+            file.write(json.dumps(self.records))
+
+    def add_record(self, record: FinanceRecord) -> None:
+        self.records[record.id] = record.to_json()
+        self.save_to_file()
+        logging.info(f"Финансовая запись с ID {record.id} добавлена")
+
+    def get_all_records(self) -> list[FinanceRecord]:
+        logging.info("Запрос на получение всех финансовых записей")
+        return [FinanceRecord.from_json(item) for item in self.records.values()]
+
+    def filter_records(self, category=None, date=None) -> list[FinanceRecord]:
+        records = self.get_all_records()
+        if category is not None:
+            records = [record for record in records if record.category == category]
+        if date is not None:
+            records = [record for record in records if record.date == date]
+        return records
+
+    def calculate_balance(self) -> float:
+        balance = sum(record.amount for record in self.get_all_records())
+        logging.info(f"Общий баланс: {balance} руб.")
+        return balance
+
+    def generate_report(self, start_date=None, end_date=None):
+        records = self.get_all_records()
+        if start_date:
+            records = [
+                record
+                for record in records
+                if datetime.strptime(record.date, "%d-%m-%Y")
+                >= datetime.strptime(start_date, "%d-%m-%Y")
+            ]
+        if end_date:
+            records = [
+                record
+                for record in records
+                if datetime.strptime(record.date, "%d-%m-%Y")
+                <= datetime.strptime(end_date, "%d-%m-%Y")
+            ]
+
+        report = {}
+        for record in records:
+            if record.category not in report:
+                report[record.category] = 0
+            report[record.category] += record.amount
+
+        logging.info("Отчёт о финансовой активности сгенерирован")
+        return report
+
+    def delete_record(self, record_id: str) -> None:
+        if record_id not in self.records:
+            logging.error(f"Запись с ID {record_id} не найдена")
+            return
+        del self.records[record_id]
+        self.save_to_file()
+        logging.info(f"Финансовая запись с ID {record_id} удалена")
+
+    def export_to_csv(self, filename: str) -> None:
+        df = pd.DataFrame.from_dict(self.records, orient="index")
+        df.to_csv(filename, index=False)
+        logging.info(f"Финансовые записи экспортированы в файл {filename}")
+
+    def import_from_csv(self, filename: str) -> None:
+        df = pd.read_csv(filename)
+        df.index = df["id"]
+        self.records = df.to_dict("index")
+        self.save_to_file()
+        logging.info(f"Финансовые записи импортированы из файла {filename}")
