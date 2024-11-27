@@ -311,3 +311,82 @@ class TaskManager:
         if due_date is not None:
             tasks = [task for task in tasks if task.due_date == due_date]
         return tasks
+
+
+class ContactManager:
+    def __init__(self, filename: str) -> None:
+        self.filename = filename
+        self.init_contacts()
+
+    def init_contacts(self) -> None:
+        if not os.path.isfile(self.filename):
+            logging.warning(f"Файл {self.filename} не найден")
+            with open(self.filename, "w") as file:
+                file.write("{}")
+                logging.info(f"Файл {self.filename} создан")
+            self.contacts = {}
+        else:
+            with open(self.filename, "r+") as file:
+                try:
+                    contacts = json.loads(file.read())
+                    logging.info(
+                        f"Файл {self.filename} найден и является валидным JSON"
+                    )
+                    self.contacts = contacts
+                except:
+                    logging.warning(f"Файл {self.filename} поврежден")
+                    file.seek(0)
+                    file.truncate(0)
+                    file.write("{}")
+                    logging.info(f"Файл {self.filename} перезаписан")
+                    self.contacts = {}
+
+    def save_to_file(self) -> None:
+        with open(self.filename, "w") as file:
+            file.write(json.dumps(self.contacts))
+
+    def add_contact(self, contact: Contact) -> None:
+        self.contacts[contact.id] = contact.to_json()
+        self.save_to_file()
+        logging.info(f"Контакт с ID {contact.id} добавлен")
+
+    def get_all_contacts(self) -> list[Contact]:
+        logging.info("Запрос на получение всех контактов")
+        return [Contact.from_json(item) for item in self.contacts.values()]
+
+    def search_contact(self, query: str) -> list[Contact]:
+        results = [
+            Contact.from_json(contact)
+            for contact in self.contacts.values()
+            if query.lower() in contact["name"].lower() or query in contact["phone"]
+        ]
+        logging.info(f"Поиск контактов по запросу '{query}'")
+        return results
+
+    def edit_contact(self, updated_contact: Contact) -> None:
+        if updated_contact.id not in self.contacts:
+            logging.error(f"Контакт с ID {updated_contact.id} не найден")
+            return
+        self.contacts[updated_contact.id] = updated_contact.to_json()
+        self.save_to_file()
+        logging.info(f"Контакт с ID {updated_contact.id} обновлён")
+
+    def delete_contact(self, contact_id: str) -> None:
+        if contact_id not in self.contacts:
+            logging.error(f"Контакт с ID {contact_id} не найден")
+            return
+        del self.contacts[contact_id]
+        self.save_to_file()
+        logging.info(f"Контакт с ID {contact_id} удалён")
+
+    def export_to_csv(self, filename: str) -> None:
+        df = pd.DataFrame.from_dict(self.contacts, orient="index")
+        df.to_csv(filename, index=False)
+        logging.info(f"Контакты экспортированы в файл {filename}")
+
+    def import_from_csv(self, filename: str) -> None:
+        df = pd.read_csv(filename)
+        df.index = df["id"]
+        self.contacts = df.to_dict("index")
+        self.save_to_file()
+        logging.info(f"Контакты импортированы из файла {filename}")
